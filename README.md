@@ -26,211 +26,149 @@ In the outlined Digital Forensics and Incident Response (DFIR) lab exercise, the
 <h2>Infection simulation walk-through:</h2>
 
 <p align="center">
-Once the Suricata service is installed in our VM, some configurations must be made for it to work. The configuration file path can be found in the screenshot. First, I changed the #HOME_NET IP address range to listen to my real home IP range which is 192.168.200.0/24  <br/>
+First, go to the VExchange · Virus. exchange website and download any 3 malware to the Windows VM machine. Windows security settings have been changed so that there is an exclusion folder where it holds the malware before the OS system deletes it. Later, I also turned off all the firewall and security settings on the machine to ensure the test would work. <br/>
   
-<img src="https://imgur.com/uO7oTYY.png" height="80%" width="80%" alt="Suricata Steps"/>
+<img src="https://imgur.com/i0gLE29.png" height="80%" width="80%" alt="DFIR Steps"/>
 <br />
 <br />
-Secondly, I enabled the community-id to be “true”:  <br/>
+Then, execute the five malware samples with administrator privileges. Continue until a ransom note becomes visible.  <br/>
   
-<img src="https://imgur.com/L9DNmSg.png" height="80%" width="80%" alt="Suricata Steps"/>
+<img src="https://imgur.com/cRQiJK1.png" height="80%" width="80%" alt="DFIR Steps"/>
 <br />
 <br />
-Made sure the af-packet is linked with our network interface. Mine is eth0.: <br/>
+After executing the malware samples with administrator rights, one of the malware triggers a ransom note and transforms all my folders into icons with lock symbols, indicating they have been encrypted. Both Process Hacker and Wireshark reveal that several .exe files are operating in the background, with some attempting to establish connections to remote locations. <br/>
   
-<img src="https://imgur.com/qvywVM6.png" height="80%" width="80%" alt="Suricata Steps"/>
+<img src="https://imgur.com/j9QPPfD.png" height="80%" width="80%" alt="DFIR Steps"/>
 <br />
 <br />
-Last, I changed to default-rule-path to /var/lib/suricata/rules as the final configuration:  <br/>
+I activated the VM's network sharing feature to transfer files to another platform for more detailed examination.  <br/>
   
-<img src="https://imgur.com/jMFGrGA.png" height="80%" width="80%" alt="Suricata Steps"/>
+<img src="https://imgur.com/ecPXjhx.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+As soon as the ransom note from the malware was displayed, I halted Wireshark's packet capturing. Thanks to the shared folder feature enabled between my virtual machine (VM) and my host machine, I managed to save the pcap file before the malware caused my VM to crash.  <br/>
+  
+<img src="https://imgur.com/vhsaW7c.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+Employ FTK Imager to perform a memory dump. After completing the dump process, do not close the application. Instead, start transferring the memory dump file from the VM to the host machine.  <br/>
+  
+<img src="https://imgur.com/NJ9NMbI.png" height="80%" width="80%" alt="DFIR Steps"/>
 <br />
 <br />
 </p>
 
-<h2>Lab 1 TCP SYN Floods walk-through:</h2>
+<h2>Start analysing with Volatility on Kali:</h2>
 
-<p align="left">
-Testing situation for TCP SYN Floods: <br/>
+<p align="center">
+I transferred the memory file from my host machine to a custom folder on the Kali VM machine to proceed with the next steps.<br/>
   
-<img src="https://imgur.com/SnlC5Na.png" height="80%" width="80%" alt="Suricata Steps"/><br />
- 
-  Explanation:
-- Alert: action that we set if the data matches the rule description
-- Tcp: monitoring TCP packets 
-- $EXTERNAL_NET any -> $HOME_NET any: monitoring traffic from external IP address range from any port to home IP address range (i.e. 192.168.200.0/24) and any port. Vice versa. 
-- Msg: log message when it pops up in Suricata log or JSON files
-- Flow: to_server:  set to monitor and detect the communication to the server as well 
-- Flag: Means TCP flag. Here we set it to monitor the “SYN” flag in the 3-way handshake protocol level. 
-- Threshold: set it with conditions before it generates an alert with packeting counts and seconds, track it either destination IP or source IP, etc. Usually, the conditions are made according to the characteristics of the attack
-- Classtype: classification of the rules and alerts. 
-- Sid: custom number for each rule identification
-- Rev: rule version
-
-
-#Testing Steps:
-
-
-Used two different VMs for this testing scenario with different IP addresses 
-
-<img src="https://imgur.com/ZVvYxN5.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-- On the testing VM, first we installed with ethtool package by typing: sudo apt-get install ethtool -y 
-- Then we typed another command to disable packet offload: sudo ethtool -K eth0 gro off lro off 
-- Last, we enabled Suricata and ran it in system mode by typing the following: sudo suricata -c /etc/suricata/suricata.yaml -q 0 &
-
-<img src="https://imgur.com/bIAUXmZ.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-On the remote machine, we typed the following command to send non-stop packets to our main machine for Suricata detection:
-- Sudo hping3 -S -p 80 --flood --rand-source 192.168.200.128
-
-<img src="https://imgur.com/s6FUdb7.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-
-#Results from fast.log:
-
-
-<img src="https://imgur.com/NpQU5JE.png" height="80%" width="80%" alt="Suricata Steps"/><br />
+<img src="https://imgur.com/GGrXmko.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+I discovered that Volatility 3 is already installed on my Kali VM, as indicated by the system's response when I attempted to repeat the installation commands, confirming its presence.<br/>
+  
+<img src="https://imgur.com/cKsnG7t.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+Now is the moment to deploy Volatility to scrutinize the memory file. By executing this command alongside the plugin "windows.pslist.PsList," we can unveil all the application processes that were active on the infected PC prior to capture. The resulting list might be extensive, reflecting the number of files that were operational beforehand. While I haven't documented every detail here, I meticulously reviewed the entire list, marking the processes deemed suspicious with yellow highlights to simplify identification.<br/>
+  
+<img src="https://imgur.com/srF8yhK.png" height="80%" width="80%" alt="DFIR Steps"/>
+<img src="https://imgur.com/7PQSvAN.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+I cataloged all the suspicious Process IDs (PIDs) and tried to gather more information using the "windows.dumpfiles" command. Unfortunately, I encountered issues with PIDs 39156 and 39908, from which I couldn't retrieve any data. However, the command worked successfully for PID 6316, which is associated with the executable file "gbQfH.exe," allowing me to list out all its details comprehensively.<br/>
+  
+<img src="https://imgur.com/iWev700.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+After executing the command, I successfully located the suspected malware executable file, now in image format, within the Volatility 3 folder.<br/>
+  
+<img src="https://imgur.com/DFB2FoH.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+I transferred the image file to a different folder and eliminated the extraneous parts of the file name to streamline the process for further investigation in the subsequent steps.<br/>
+  
+<img src="https://imgur.com/M3XuPmY.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+After executing the "windows.netscan.NetScan" command, it revealed all the network connections present in the memory dump. Interestingly, there was no direct mention of the malwares in question. This suggests that they might be disguising their network connections under different file forms or possibly leveraging legitimate Windows service files like "winslogon.exe" for internet connectivity. Additionally, the data retrieved with the netstat plugin in Volatility reflects the network connections and running processes at the time of the memory dump. It's important to note that this snapshot might not align perfectly with the historical network traffic recorded in the pcap file, as the latter documents past communications between network entities.<br/>
+  
+<img src="https://imgur.com/zCmPjKf.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+After entering the "windows.netstat" command, I observed that only a fragment of the network status and protocol statistics was displayed, likely due to certain limitations. Research on GitHub suggested that these issues might stem from the inability to fully accommodate the symbol table from the latest version of Windows. Consequently, the reliability of these results is questionable. Upon further investigation of the IP addresses on VirusTotal, they all appeared to be legitimate destinations associated with Windows services.<br/>
+<img src="https://imgur.com/jE6ZnMY.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+However, since Volatility revealed the presence of the three malwares we downloaded using a different command, it's plausible that traces of their activity could be found in Wireshark. An example of this is a DNS query for the domain "loki-locker.one" originating from my IP address, 192.168.10.146. This particular activity aligns with the ransomware note observed on the desktop of my Windows VM, indicating that the malware attempted to establish a connection to its command and control server via the malware's cloud URL index page. This serves as evidence that the malware was actively trying to communicate with an external server.<br/>
+<img src="https://imgur.com/GIZJVYU.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+Another intriguing discovery emerged from analyzing the Wireshark data. Upon examining the DNS query records, it was interesting to note that the infected machine attempted to connect to Spotify-related subdomain addresses. Further investigation into this activity revealed that the IP address 35.186.224.25 was involved in initiating the TCP handshake process, as well as in the exchange of certificates and cipher keys. This detail adds layer of complexity to the investigation, suggesting that the malware might have been trying to disguise its communication by mimicking traffic to well-known services.
+<br/>
+<img src="https://imgur.com/mjWhuYm.png" height="80%" width="80%" alt="DFIR Steps"/>
+<img src="https://imgur.com/3twjVhK.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+Upon consulting VirusTotal and reviewing comments there, it was noted that the activity involving the Spotify subdomain addresses is associated with a Spotify brute force attack. However, the specific root malware responsible for initiating this activity remains uncertain. The connection to Spotify indicates a potential attempt to exploit or test credentials, yet pinpointing which of the initially downloaded malwares is behind this action requires further analysis. This ambiguity highlights the complexity of malware behavior and the challenges in tracing specific actions back to their origins in cybersecurity investigations.
+<br/>
+<img src="https://imgur.com/tFeIgN0.png" height="80%" width="80%" alt="DFIR Steps"/>
+<img src="https://imgur.com/CgCj7eS.png" height="80%" width="80%" alt="DFIR Steps"/>
 <br />
 <br />
 </p>
 
-<h2>Lab 2 SQL Injection attack walk-through:</h2>
 
-<p align="left">
-Testing situation for SQL Injection attack:  <br/>
+<h2>Performing string analysis for the development of Yara rules:</h2>
+
+<p align="center">
+I transferred the memory file from my host machine to a custom folder on the Kali VM machine to proceed with the next steps.<br/>
   
-<img src="https://imgur.com/NJLRSYw.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-  Explanation:
-- Alert: action that we set if the data matches the rule description
-- Tcp: monitoring HTTP packets 
-- Any any-> Any any: monitoring traffic from any IP address range from any port to any IP address range on the network and any port. 
-- Msg: log message when it pops up in Suricata log or JSON files
-- Flow: established,to_server:  set to monitor and detect the communication to the server as well but limit it to search for packets of established connections only matching the signatures. 
-- Nocase: case insensitive search enabling function.  
-- HTTP_: request keywords 
-- Sid: custom number for each rule identification
+<img src="https://imgur.com/GGrXmko.png" height="80%" width="80%" alt="DFIR Steps"/>
 
 
-#Testing Steps:
-
-Damn Vulnerable Web Application (DVWA) is a PHP/MySQL web application that is to aid penetration testers and security professionals to test their skills and tools. To perform the testing, I needed to install DVWA in my testing Kali Linux machine but I will not go through the installation steps in this lab. Once I did, I typed 127.0.01 (my localhost IP address) in the browser for this main page.  
-
-<img src="https://imgur.com/9JGcpgW.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-Set it to a low level so I could let the Suricata detect more easily.
-
-<img src="https://imgur.com/O5ceT9u.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-Clicked the SQL Injection from the left side, then clicked submit
-
-<img src="https://imgur.com/YgbCBMn.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-#Results from fast.log:
 
 
-<img src="https://imgur.com/caQRxnV.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-<br />
-<br />
-</p>
-
-<h2>Lab 3 Phishing walk-through:</h2>
-
-<p align="left">
-Testing situation for Phishing attack:  <br/>
-  
-<img src="https://imgur.com/v52PAJ1.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-  Explanation:
--  Alert: action that we set if the data matches the rule description
--  DNS: monitoring all DNS packets 
--  Any any-> Any 53: monitoring traffic from any IP address range from any port to any IP address range on the network but particularly via Port 53 which is TCP/UDP for DNS service. 
--  Msg: log message when it pops up in Suricata log or JSON files
--  DNS_query: keyword that indicates all DNS request queries will be inspected
--  Content: payloads/keywords that we would like our search to match specifically 
--  Nocase: case insensitive search enabling function.  
--  Isdataat: look if there is still data at a specific part of the payload, we set 1 byte here.
--  Sid: custom number for each rule identification
--  Rev: rule version
 
 
-#Testing steps and the result from fast.log: 
 
-I pinged the domain and there was a DNS query service running in behind, so it hit the rule and appeared in the log file. 
 
-<img src="https://imgur.com/NiLJCGy.png" height="80%" width="80%" alt="Suricata Steps"/><br />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <br />
 <br />
 </p>
 
-<h2>Lab 4 Unauthorized protocol and traffic walk-through:</h2>
-
-<p align="left">
-Testing situation for this attack:  <br/>
-  
-<img src="https://imgur.com/dm9HnW1.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-  Explanation:
-- Alert: action that we set if the data matches the rule description
-- TCP: monitoring all TCP packets 
-- Any any-> Any ![80,8080] or 80: monitoring traffic from any IP address range from any port to any IP address range on the network, particularly outside of Port 80&8080 for HTTP service. The! here means -excluding. The 2nd rule is monitoring Port 80 though. 
-- Msg: log message when it pops up in Suricata log or JSON files
-- Flow: to_server:  set to monitor and detect the communication to the server as well 
-- App-layer-protocol: specifying which protocol we wanted to monitor and search  
-- Sid: custom number for each rule identification
-- Rev: rule version
-
-
-#Testing steps: 
-
-To start off, there are two configurations I had to make.Ports.conf and 000-default.conf. I went to the directory where they belonged. 
-
-<img src="https://imgur.com/B78y4V3.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-
-Type: sudo nano 000-default.conf. 
-
-In <VirtualHost *:>, I typed 4848 which is a UDP port for datagram service, here to make my Apache server listen to this port. 
-
-Then save and exit. 
-
-<img src="https://imgur.com/71FhKeF.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-
-After that, I went to the directory /etc/apache2 and I typed:
-- Sudo nano ports.conf
-
-The Apache port is configured to listen to Port 4848 which is 4800. Save and exit. All configurations are made.
-
-<img src="https://imgur.com/71FhKeF.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-Then I typed the following commands to restart my Apache server and check its status: 
-- Sudo systemctl restart apache2.service
-- Sudo systemctl status apache2.service
-
-<img src="https://imgur.com/rI1YVOC.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-In this testing, I used 2 different VMs here with different IPs as well. I will not go through the installation part of the Apache server here in this assignment. Once it was successfully installed, we can open it in another VM by typing another VM IP address in the browser and it would show the Apache2 Debian Default Page.
-
-<img src="https://imgur.com/26XEw08.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-Since I made the configuration, I typed the IP address via port 4848 again and it was fine that I could go to this main page again.
-
-<img src="https://imgur.com/Ki0rzy8.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-
-#Result from fast.log: 
-
-Since we are using Port 484, it hits the rule description of noting using Port 80 or 8080. We got our results.
-
-<img src="https://imgur.com/6VdecM7.png" height="80%" width="80%" alt="Suricata Steps"/><br />
-
-<br />
-<br />
-</p>
 <!--
  ```diff
 - text in red
