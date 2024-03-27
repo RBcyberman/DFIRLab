@@ -120,51 +120,43 @@ Upon consulting VirusTotal and reviewing comments there, it was noted that the a
 </p>
 
 
-<h2>Performing string analysis for the development of Yara rules:</h2>
+<h2>Performing strings analysis for the development of Yara signature rules and further testing with Thor Lite:</h2>
 
 <p align="center">
-I transferred the memory file from my host machine to a custom folder on the Kali VM machine to proceed with the next steps.<br/>
+In this lab, where multiple malware samples were tested, the next steps involve utilizing the `strings` command to extract all readable character sequences from the target files previously identified with Volatility. The first file in question is named `CXYIJlo.exe`, which is one of the malware samples under investigation. The second file pertains to what is referred to as "ebc" malware. Upon investigating the hash of this file, it appears to be associated with the Loki ransomware, indicating its likely purpose and functionality. The final analysis focuses on a file named `gbQfH.exe`, which is another malware sample selected for examination. Through these steps, the aim is to uncover more about the nature, capabilities, and potential origins of each malware sample by analyzing the strings extracted from their respective files.<br/>
   
-<img src="https://imgur.com/GGrXmko.png" height="80%" width="80%" alt="DFIR Steps"/>
+<img src="https://imgur.com/h3gxbwO.png" height="80%" width="80%" alt="DFIR Steps"/>
+<img src="https://imgur.com/draqr3n.png" height="80%" width="80%" alt="DFIR Steps"/>
+<img src="https://imgur.com/HnIbUP9.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+To enhance the identification and analysis of the malicious processes dumped during the lab, Yara rules are crafted for each one. This approach involves using the `strings` data extracted from the malware samples to define patterns unique to each malware variant. After analyzing the strings, a Yara rule is specifically created for the Loki ransomware. This rule is structured such that for a positive identification to be reported by the virus scanner, two specific strings identified in the Loki ransomware's dumped process must be matched simultaneously. This condition ensures a more accurate detection by requiring multiple indicators of compromise (IOCs) to be present, reducing the likelihood of false positives. The created Yara rules are then tested against the dumped processes using the custom signatures feature of Thor Lite, a tool designed for advanced malware detection and analysis. This process not only validates the effectiveness of the Yara rules but also enhances the overall security posture by enabling the detection of sophisticated threats.
+<img src="https://imgur.com/JfDy59Y.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+For the second Yara rule, which is dedicated to identifying the CXY malware, an alternative approach is adopted in defining the condition for detection. In addition to the option of specifying that "2 of them" strings need to match for a report to be generated, the rule allows for the explicit naming of "string 1" and "string 2". This means that for a detection to be flagged, both of these specified strings must be found within a scanned file or process simultaneously. This method enhances the specificity of the Yara rule, ensuring that only processes containing both strings are identified as instances of the CXY malware.
 
+<img src="https://imgur.com/zoIxq1F.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+For the third Yara rule, tailored for the Gbq malware, the detection condition is designed to enhance precision by requiring a match for "3 of them" specified strings within the target. This approach further refines the detection process by ensuring that only entities containing all three identified strings are flagged, significantly reducing the chances of false positives.
 
+<img src="https://imgur.com/t1VEkH8.png" height="80%" width="80%" alt="DFIR Steps"/>
 
+<br />
+<br />
+To ensure Thor Lite effectively utilizes these newly created Yara rules for malware detection, it's essential to place the Yara rule files into the "custom-signatures" folder. This folder is located within the directory "thor10.7lite-linux-pack." Proper placement of the Yara files is a critical step to integrate them with Thor Lite's scanning capabilities, allowing for the execution of these custom rules during the malware search process. This integration enables Thor Lite to leverage the specific criteria defined in the Yara rules for more targeted and accurate malware identification and analysis.
+<br />
+<br />
+After transferring the Thor Lite file folder for semester 2 to the Kali machine and incorporating the license into said folder, the command to initiate a scan of the entire folder utilizing the custom Yara rule files I've created is executed as follows: `./thor-lite-linux -p <folder path>`. This command instructs Thor Lite to perform a comprehensive scan of the specified folder path, applying the Yara rules I've developed to identify any malware that matches the criteria outlined in those rules. This process allows for a targeted search within the folder, leveraging the precision of the Yara rules to detect and analyze potential malware threats effectively.
 
+<img src="https://imgur.com/g8kxffw.png" height="80%" width="80%" alt="DFIR Steps"/>
+<br />
+<br />
+The screenshots show that the three Yara rule files matched the findings in the target folder, successfully identifying the malware image files. This outcome indicates that the rules were precisely crafted and applied effectively, enabling the detection of malware based on the specified criteria. The success of this action highlights the effectiveness of using custom Yara rules for targeted malware detection and analysis.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<img src="https://imgur.com/38FV0kM.png" height="80%" width="80%" alt="DFIR Steps"/>
+<img src="https://imgur.com/mf5nn8h.png" height="80%" width="80%" alt="DFIR Steps"/>
 <br />
 <br />
 </p>
